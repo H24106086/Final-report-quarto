@@ -1,0 +1,1572 @@
+---
+title: "Final Report"
+date: today
+author: Group 6
+format:
+ pdf:
+    include-in-header:
+      - text: |
+         \usepackage{setspace,relsize}
+         \usepackage{geometry}
+         \geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
+mainfont: "Microsoft JhengHei UI"
+toc: true
+#lang: zh-CN
+documentclass: article
+pdf-engine: xelatex
+execute:
+  tidy: true
+  cache: true
+---
+
+#引入必要資料集
+
+```{r}
+suppressMessages(library(Hmisc))
+suppressMessages(library(knitr))
+suppressMessages(library(DataExplorer))
+suppressMessages(library(sf))
+suppressMessages(library(ggplot2))
+suppressMessages(library(patchwork))
+suppressMessages(library(table1))
+suppressMessages(library(MASS))
+suppressMessages(library(pscl))
+suppressMessages(library(car))
+suppressMessages(library(zoo))
+suppressMessages(library(dplyr))
+suppressMessages(library(TSA))
+suppressMessages(library(tseries))
+suppressMessages(library(forecast))
+suppressMessages(library(dlm))
+suppressMessages(library(rpart))
+suppressMessages(library(rpart.plot))
+suppressMessages(library(randomForest))
+suppressMessages(library(kableExtra))
+suppressMessages(library(goftest))
+suppressMessages(library(fitdistrplus))
+suppressMessages(library(betareg))
+suppressMessages(library(imputeTS))
+suppressMessages(library(rugarch))
+suppressMessages(library(margins))
+```
+
+#設定路徑。
+
+```{r setup}
+opts_knit$set(root.dir = "C:/2024/dengu")
+```
+
+```{r}
+getwd()
+```
+
+## 資料處理與敘述統計
+
+將資料引入，因為資料是一年為一個檔案，所以需要分別引入。
+
+將資料引入後，使用R語言內建str()函數，可以看出，以下變數在
+
+變數類別上應 該要做調整:日期、容器指數、容器級數、經度與緯
+
+度，其中日期應調整為時間的變數，其他則個別調整為整數或小數
+
+。在轉換時，不是數字的字串就會自動轉為 缺失值(NA)。
+
+在合併各個檔案時，可以發現104年的資料缺少經度與緯度，所以我
+
+們先暫時只合 併105年以後的資料。
+
+```{r}
+
+data13 <- read.csv("C:/2024/dengu/113.csv")
+data12 <- read.csv("C:/2024/dengu/112.csv")
+data11 <- read.csv("C:/2024/dengu/111.csv")
+data10 <- read.csv("C:/2024/dengu/110.csv")
+data09 <- read.csv("C:/2024/dengu/109.csv")
+data08 <- read.csv("C:/2024/dengu/108.csv")
+data07 <- read.csv("C:/2024/dengu/107.csv")
+data06 <- read.csv("C:/2024/dengu/106.csv")
+data05 <- read.csv("C:/2024/dengu/105.csv")
+data04 <- read.csv("C:/2024/dengu/104.csv")
+data <- rbind(data05,data06,data07,data08,data09,data10,
+              data11,data12,data13)
+data$日期 <- suppressWarnings(as.Date(data$日期,format = "%Y%m%d"))
+data$容器指數 <- suppressWarnings(as.numeric(data$容器指數))
+data$容器級數 <- suppressWarnings(as.numeric(data$容器級數))
+data$經度 <- suppressWarnings(as.numeric(data$經度))
+data$緯度 <- suppressWarnings(as.numeric(data$緯度))
+data$行政區域代碼 <- suppressWarnings(as.character(data$行政區域代碼))
+data$縣市別代碼 <- suppressWarnings(as.character(data$縣市別代碼))
+oname <- colnames(data)
+colnames(data) <- c("Date","COUNTYCODE","TOWNCODE",
+                  "VILLNAME","survey_type","surveyed_hh",
+                  "pos_hh","in_cont","out_cont","total_cont",
+                  "pin_cont","pout_cont","ptotal_cont",
+                  "bidx","blvl","contidx","contlvl","lon","lat")
+colnames(data05) <- c("Date","COUNTYCODE","TOWNCODE",
+                  "VILLNAME","survey_type","surveyed_hh",
+                  "pos_hh","in_cont","out_cont","total_cont",
+                  "pin_cont","pout_cont","ptotal_cont",
+                  "bidx","blvl","contidx","contlvl","lon","lat")
+colnames(data06) <- c("Date","COUNTYCODE","TOWNCODE",
+                  "VILLNAME","survey_type","surveyed_hh",
+                  "pos_hh","in_cont","out_cont","total_cont",
+                  "pin_cont","pout_cont","ptotal_cont",
+                  "bidx","blvl","contidx","contlvl","lon","lat")
+colnames(data07) <- c("Date","COUNTYCODE","TOWNCODE",
+                  "VILLNAME","survey_type","surveyed_hh",
+                  "pos_hh","in_cont","out_cont","total_cont",
+                  "pin_cont","pout_cont","ptotal_cont",
+                  "bidx","blvl","contidx","contlvl","lon","lat")
+colnames(data08) <- c("Date","COUNTYCODE","TOWNCODE",
+                  "VILLNAME","survey_type","surveyed_hh",
+                  "pos_hh","in_cont","out_cont","total_cont",
+                  "pin_cont","pout_cont","ptotal_cont",
+                  "bidx","blvl","contidx","contlvl","lon","lat")
+colnames(data09) <- c("Date","COUNTYCODE","TOWNCODE",
+                  "VILLNAME","survey_type","surveyed_hh",
+                  "pos_hh","in_cont","out_cont","total_cont",
+                  "pin_cont","pout_cont","ptotal_cont",
+                  "bidx","blvl","contidx","contlvl","lon","lat")
+colnames(data10) <- c("Date","COUNTYCODE","TOWNCODE",
+                  "VILLNAME","survey_type","surveyed_hh",
+                  "pos_hh","in_cont","out_cont","total_cont",
+                  "pin_cont","pout_cont","ptotal_cont",
+                  "bidx","blvl","contidx","contlvl","lon","lat")
+colnames(data11) <- c("Date","COUNTYCODE","TOWNCODE",
+                  "VILLNAME","survey_type","surveyed_hh",
+                  "pos_hh","in_cont","out_cont","total_cont",
+                  "pin_cont","pout_cont","ptotal_cont",
+                  "bidx","blvl","contidx","contlvl","lon","lat")
+colnames(data12) <- c("Date","COUNTYCODE","TOWNCODE",
+                  "VILLNAME","survey_type","surveyed_hh",
+                  "pos_hh","in_cont","out_cont","total_cont",
+                  "pin_cont","pout_cont","ptotal_cont",
+                  "bidx","blvl","contidx","contlvl","lon","lat")
+colnames(data13) <- c("Date","COUNTYCODE","TOWNCODE",
+                  "VILLNAME","survey_type","surveyed_hh",
+                  "pos_hh","in_cont","out_cont","total_cont",
+                  "pin_cont","pout_cont","ptotal_cont",
+                  "bidx","blvl","contidx","contlvl","lon","lat")
+expl <- c("調查的日期。","全部都是台南市代碼。","行政區代碼。","里。","包含住家、機關、學校等。","該次調查調查的家戶數量。","調查中為陽性的家戶數。","室內調查的容器。","戶外調查的容器。","總和調查的容器。","室內調查的容器中有登革熱病媒蚊幼蟲。","室外調查的容器中有登革熱病媒蚊幼蟲。","總計調查的容器中有登革熱病媒蚊幼蟲。","調查100戶住宅，發現登革熱病媒蚊幼蟲孳生陽性容器數。=陽性容器數／調查戶數 × 100","以布式指數參考下表轉換。","調查100個容器，發現登革熱病媒蚊幼蟲孳生容器之百分比。=陽性容器數／調查容器數 × 100 %。","以容器指數參考下表轉換。","經度。","緯度。")
+descr <- data.frame(oname,colnames(data),expl)
+colnames(descr) <- c("原始變數名稱","轉換後英文名稱","變數簡介")
+kable(descr)
+str(data)
+
+```
+
+使用Hmisc套件中的"describe"函數進行資料展示。 
+並使用DataExplorer的"plot_missing"進行遺失值展示。由圖中可
+以看出，遺失的部分佔比很小，因此我們選擇將所有有遺失值的部
+分刪除。
+
+```{r}
+#latex(describe(subset(data,select=-c(VILLNAME,survey_type))),file="",caption.placement= "top")
+plot_missing(data)
+data <- na.omit(data)
+```
+
+各年分樣本數
+
+```{r}
+#summary(data)
+#Sample Size of each Year
+y <- format(data$Date,"%Y")
+barplot(table(as.numeric(y)),ylim=c(0,12000),main="Sample
+        Size of each Year")
+kable(table(as.numeric(y)),col.names=c("年分","樣本數"),
+      caption = "各年分樣本數")
+```
+
+各行政區樣本數，樣本多集中於市區。
+
+```{r}
+coun <- data.frame(table(data$TOWNCODE))
+colnames(coun) <- c("TOWNCODE", "Freq")
+mapt <- st_read("TOWN_MOI_1131028.shp")
+mapt <- mapt[mapt$COUNTYNAME=="臺南市",]
+mapt <- merge(mapt,coun,by="TOWNCODE",all=T)
+coord <- as.data.frame(st_centroid(mapt))
+f <- suppressWarnings(st_coordinates(st_centroid(mapt)))
+u <- ggplot(data = mapt) +
+  geom_sf(aes(fill = Freq)) +
+  scale_fill_gradient(low="white",high="green",name ="Sample size of each \n administrative district" )+
+  geom_text(data = coord, aes(x = f[,1], y = f[,2], label = coord$TOWNENG), 
+          size = 2, color = "black", vjust =0)
+suppressMessages(u)
+
+kable(cbind(mapt$TOWNNAME,mapt$Freq),caption="各地區樣本數"
+      ,col.names = c("行政區","樣本數"))
+```
+
+各地區調查戶數。由此結果可以看出，各樣本的調查戶數皆集中在市區區域。
+
+```{r}
+coun1 <- tapply(data$surveyed_hh,data$TOWNCODE,sum)
+coun1 <- data.frame(
+  TOWNCODE = names(coun1),
+  Num = as.numeric(coun1))
+mapt <- merge(mapt,coun1,by="TOWNCODE",all=T)
+m1 <- ggplot(data = mapt) +
+  geom_sf(aes(fill = Num)) +
+  scale_fill_gradient(low="white",high="blue",name ="The total number of surveyed\n households in each\n administrative district" )+
+  geom_text(data = coord, aes(x = f[,1], y = f[,2], label = coord$TOWNENG), 
+          size = 2, color = "black", vjust =0)
+suppressMessages(m1)
+kable(cbind(mapt$TOWNNAME,mapt$Num),caption="各地區調查戶數"
+      ,col.names = c("行政區","調查戶數"))
+```
+
+各年度陽性戶數總計。
+
+```{r}
+d <- function(data,X="pos_hh",name=F,main="",high="red",l=1500){
+  coun <- data.frame(table(data$TOWNCODE))
+  colnames(coun) <- c("TOWNCODE", "Freq")
+  coun2 <- tapply(data[[X]],data$TOWNCODE,sum)
+  coun2 <- data.frame(
+    TOWNCODE = names(coun2),
+    Num = as.numeric(coun2))
+  mapt <- st_read("TOWN_MOI_1131028.shp")
+  mapt <- mapt[mapt$COUNTYNAME=="臺南市",]
+  mapt <- merge(mapt,coun,by="TOWNCODE",all=T)
+  mapt <- merge(mapt,coun2,by="TOWNCODE",all=T)
+  coord <- as.data.frame(st_centroid(mapt))
+  f <- st_coordinates(st_centroid(mapt))
+  if (!name){
+  z <- ggplot(data = mapt) +
+  geom_sf(aes(fill = Num)) +
+  scale_fill_gradient(low="white",high=high,name =X,limits=c(0,l))+
+    ggtitle(main)
+  }
+  else{
+    z <- ggplot(data = mapt) +
+  geom_sf(aes(fill = Num)) +
+  scale_fill_gradient(low="white",high=high,name =X ,limits=c(0,l))+
+  geom_text(data = coord, aes(x = f[,1], y = f[,2], 
+                              label = coord$TOWNENG), 
+          size = 2, color = "black", vjust =0)+
+      ggtitle(main)
+  }
+  
+ 
+  return(z)
+}
+m2 <- d(data,name=T,main="Total positive household",l=7000)
+suppressMessages(m2)
+suppressMessages(d(data05,main="2016")+d(data06,main="2017")+d(data07,main="2018")+d(data08,main="2019")+d(data09,main="2020")+d(data10,main="2021")+d(data11,main="2022")+d(data12,main="2023")+d(data13,main="2024"))
+```
+
+由前面的地圖可以看出，確診的人幾乎都集中在台南市的西南方區
+
+域，也是主觀上人口較多的市區還有與市區相交接的郊區。但必須
+
+考慮到此資料是抽樣之後的結果，並非普查，因此調查戶數也必須
+
+加入考慮，否則一地區若有較大的調查戶數，可能會反應出過多或
+
+過少的陽性戶數。以下繪製以樣本陽性比例((1)式)作為數值的圖形
+
+。但我們認為，當資料以比例做為呈現，就不具有可加性，在繪製
+
+分級設色圖時，不可忽略掉時間與地區的影響。因此我們以民國105
+
+年之後的所有資料為例，並主觀設置月份為時間區段，針對這個一
+
+個月內，各行政區的陽性戶數加總除以調查戶數加總，所構成的樣
+
+本陽性比例。如((2)式)。(各月分地區比例缺失值暫時以0代替。) 
+
+同時也繪製每月各行政區的總調查戶數分層設色圖。 
+
+$$\frac{陽性戶數}{調查戶數}=樣本陽性比例\;\;\;\;(1)$$ 
+$$\frac{陽性戶數_{i}}{調查戶數_{i}}=樣本陽性比例_{i}\;,i=1,2,...,12\;\;\;(2)$$
+
+```{r}
+datadraw <- data#rbind(data06,data07)
+Mon <- format(as.Date(datadraw$Date),"%m")
+datadraw <- cbind(datadraw,Mon)
+sumpos <- tapply(datadraw$pos_hh, list(datadraw$Mon, datadraw$TOWNCODE), sum)
+sumsurv <- tapply(datadraw$surveyed_hh, list(datadraw$Mon, datadraw$TOWNCODE), sum)
+ratio <- sumpos/sumsurv
+
+d2 <- function(i,high="red",main=""){
+  mapt <- st_read("TOWN_MOI_1131028.shp")
+  mapt <- mapt[mapt$COUNTYNAME=="臺南市",]
+  df <- data.frame(ratio[i,])
+  colnames(df) <- "ratio"
+  mapt <- cbind(mapt,df)
+  z <- ggplot(data = mapt) +
+  geom_sf(aes(fill = ratio)) +
+  scale_fill_gradient(low="white",high=high,name ="",limits=c(0,0.035))+
+    ggtitle(main)
+  return(z)
+}
+suppressMessages(d2(1,main="Jan")+d2(2,main="Feb")+d2(3,main="Mar")+d2(4,main="Apr")+d2(5,main="May")+d2(6,main="Jun")+d2(7,main="Jul")+d2(8,main="Aug")+d2(9,main="Sep")+d2(10,main="Oct")+d2(11,main="Nov")+d2(12,main="Dec")+plot_layout(nrow = 4, ncol = 3))
+
+d3 <- function(i,high="blue",main=""){
+  mapt <- st_read("TOWN_MOI_1131028.shp")
+  mapt <- mapt[mapt$COUNTYNAME=="臺南市",]
+  df <- data.frame(sumsurv[i,])
+  colnames(df) <- "total"
+  mapt <- cbind(mapt,df)
+  z <- ggplot(data = mapt) +
+  geom_sf(aes(fill = total)) +
+  scale_fill_gradient(low="white",high=high,name ="",limits=c(0,70000))+
+    ggtitle(main)
+  return(z)
+}
+
+suppressMessages(d3(1,main="Jan")+d3(2,main="Feb")+d3(3,main="Mar")+d3(4,main="Apr")+d3(5,main="May")+d3(6,main="Jun")+d3(7,main="Jul")+d3(8,main="Aug")+d3(9,main="Sep")+d3(10,main="Oct")+d3(11,main="Nov")+d3(12,main="Dec")+plot_layout(nrow = 4, ncol = 3))
+
+```
+
+接著我們針對變數"陽性戶數"、"陽性容器"、"布氏指數"與"容器指
+
+數"進行個別直方圖繪製，可以從圖中看出，此筆資料的0值較多。
+
+```{r}
+layout(matrix(c(1,2,3,4),nrow=2))
+hist(data$pos_hh,main="Histogram of positive household after year 2016",xlab="Positive Household")
+hist(data$ptotal_cont,main="Histogram of positive container after year 2016",xlab="Total positve container")
+hist(data$bidx,main="Histogram of breteau index after year 2016",xlab="Breteau index")
+hist(data$contidx,main="Histogram of container index after year 2016",xlab="Container index")
+layout(1)
+```
+
+資料中亦有提供調查種類的變數，我們將這些資料按照行政區域進
+
+行分類，並比較其比例。因為種類過多，因此我們決定對調查種類
+
+進行分類，將原本12個調查種類分為3類。
+
+```{r}
+#各行政區調查種類
+kable(table(data$survey_type),col.names = c("調查種類","數量"),caption = "調查種類與次數")
+nst <- data$survey_type
+nst <- ifelse(nst=="公園"|nst=="市場"|nst=="學校"|nst=="機關","Public",ifelse(nst=="住宅"|nst=="菜園","Private","Else"))
+data$survey_type <- nst
+dfn <- data.frame(c("Public","Private","Else"),c("公園、市場、學校、機關","住宅、菜園","NA、地區、其他、空地、空屋、裕聖里"))
+colnames(dfn) <- c("分類名稱","包含種類")
+kable(dfn,caption="合併後變數")
+h <- data$TOWNCODE
+g <- cbind(mapt$TOWNCODE,mapt$TOWNNAME)
+h <- g[match(h,g[,1]),2]
+table1(~h|survey_type,data)
+kable(table(data$survey_type),caption="調查種類調整後次數",col.names = c("",""))
+```
+
+## 零值處理
+
+由前面的直方圖可以看出資料的0值較多，另外一種看法是將資料進
+
+行函數轉換，以解決極度右偏狀況。因此我們先嘗試使用式(3)進行
+
+轉換。可以發現轉換後，依然無法解決右偏的現象，且0的值依然過
+
+多。所以我們決定針對0值進行處理，探索0值出現的原因與模式，
+
+並與非0值分開進行分析。
+
+$$g(x)=ln(x+1),\;\,x\ge0\;\;\;\;(3)$$
+
+```{r}
+hist(log(data$pos_hh+1),main="Histogram of Log-Transformed Total Positive Containers After Year 2016",xlab="Positive Household")
+```
+
+### 零值模式探索
+
+#### 1.人口聚集區與非聚集區
+
+我們首先先將台南市劃分為兩個區域，第一個區域(市區與鄰近郊區
+
+，由上圖的結果來看):東區、北區、中西區、南區、安平區、永康
+
+區、安南區與仁德區；第二個地區則是其他的所有區域。將第一個
+
+區域設定為類別"1"，第二個區域設定為類別"0"。由邊際列連表可
+
+以看出，人口聚集區與否，似乎與0值的發生與否並沒有直接關聯。
+
+使用chisq.test()函數進行卡方檢定，得到的p-value為1，不拒絕
+
+虛無假設，此二變數在顯著水準0.05的情況下獨立。
+
+```{r}
+dataz <- data
+Class <- ifelse(dataz$TOWNCODE   %in% c("67000320", "67000340","67000370","67000330","67000360","67000310","67000350","67000270"), 1, 0)
+dataz <- cbind(dataz,Class)
+actual <- ifelse(dataz$pos_hh>=1,1,0)
+t <- prop.table(table(Class,actual), margin = 1)
+dft <- data.frame(r1=c("","為0","不為0"),r2=c("非人口聚集區",round(t[1],digits = 3),round(t[3],digits = 3)),r3=c("人口聚集區",round(t[2],digits=3),round(t[4],digits=3)))
+kable(t(dft),row.names=F,caption="人口聚集邊際列連表")
+chites <- matrix(c(0.882, 0.118, 0.662, 0.338), nrow = 2, byrow = TRUE)
+chisq.test(chites)
+
+```
+
+#### 2.月份
+
+從前面不同月份的分層設色圖可以看到夏秋兩季的樣本陽性比例較
+
+高，因此我們猜測0值的發生或許與月份有所關聯，且月份可能可以
+
+代表季節的變化、溫度與降水。進行卡方檢定，得到p-value遠小於
+
+0.05，拒絕虛無假設，代表在顯著水準0.05下，月分與0值發生與否
+
+之間並不獨立。所以我們推測關於零值的出現與月份有所關聯。
+
+```{r}
+mon <- format(data$Date,"%m")
+chisq.test(table(mon,actual))
+kable(table(mon,actual),caption="月分與零值列連表")
+data <- cbind(data,mon)
+```
+
+#### 3.調查種類
+
+因為在"台南市政府登革熱防治中心"網站中，亦有關於陽性容器詳
+
+細種類的調查，因此我們認為或許調查的種類可能會是重要的變量
+
+。一樣進行列連表卡方檢定，得到p-value遠小於0.05，拒絕虛無假
+
+設，在顯著水準0.05的情況下，調查種類與零值發生不獨立。我們
+
+推測調查的種類可能會是其中一個重要變量。
+
+```{r}
+type <- data$survey_type
+chisq.test(table(type,actual))
+kable(table(type,actual),caption="調查種類與零值列連表")
+
+```
+
+#### 4.決策樹
+
+由前面3點，我們針對我們認為潛在的模式進行探索，結論是零值的
+
+發生與否在我們的猜測下只與此資料有提供的變數有關，我們希望
+
+進行更全面的探索，所以選擇使用決策樹與隨機森林進行嘗試。
+
+從決策樹的結果可以看出，決策樹幾乎無法提供任何訊息，僅以"陽
+
+性容器合計"作為分類標準。
+
+```{r}
+m <- rpart(actual ~ . ,data=subset(data,select=-c(Date,COUNTYCODE,VILLNAME,surveyed_hh,pos_hh)),method = "class") 
+rpart.plot(m)
+```
+
+#### 零值預測模型建立
+
+我們先將資料分為訓練資料集與測試資料集，以便進行分類器效果
+
+的驗證。我們選擇105年初至111年末為訓練集，112年初至112年末
+
+為測試集。
+
+```{r}
+train <- data %>%
+  filter(Date >= as.Date("2016-01-01") & Date <= as.Date("2022-12-31"))
+test <- data %>%
+  filter(Date >= as.Date("2023-01-01") & Date <= as.Date("2023-12-31")) 
+act_tra <- ifelse(train$pos_hh>=1,1,0)
+act_tes <- ifelse(test$pos_hh>=1,1,0)
+
+layout(matrix(c(1,2),ncol=2))
+barplot(table(act_tra),main="Bar Chart of Zero vs. Non-Zero Values in the Training Set",ylim=c(0,50000))
+barplot(table(act_tes),main="Bar Chart of Zero vs. Non-Zero Values in the Testing Set",ylim=c(0,12000))
+layout(1)
+```
+
+#### 1.加權羅吉斯回歸(Weighted logistic regression)
+
+由上面的直條圖可以看出0與非0的值的次數有所差距，因此在使用
+
+羅吉斯回歸進行分類預測時，必須進行加權，將所有為零的值加上
+
+權重(4)，不為零的值加上權重(5)。選擇幾個我們認為重要的變數
+
+，估計出來的模型如下表(月份僅列出顯著的部分，月份以"一月"為
+
+基準，調查種類以"其他"作為基準)。由最後的混淆矩陣可以看出，
+
+使用此法可以很好地捕捉0值出現的模式。另外，我們有考慮過簡化
+
+模型，使用Akaike Information Criterion 
+
+(AIC)進行stepwise進行變數選擇，但最後選擇出的模型將不考慮月
+
+份的變量，因此認為選擇後的模型會過度丟失掉訊息與難以解釋；
+
+另外，此筆資料的變數並不多，因此我們認為沒有必要進行模型簡
+
+化。
+
+$$
+\frac{sample\;size}{number\;of\;0}\;\;\;\;(4)
+$$
+
+$$
+\frac{sample\;size}{number\;of\;not\;0}\;\;\;\;(5)
+$$
+
+**表一、加權羅吉斯回歸估計結果。**
+
+|                  |          |            |             |        |
+|------------------|----------|------------|-------------|--------|
+|                  | Estimate | Std. Error | Pr(\>\|z\|) |        |
+| 截距             | -7.476   | 0.369      | \< 2e-16    | \*\*\* |
+| 調查種類-Private | 0.902    | 0.288      | 0.001722    | \*\*   |
+| 調查種類-Public  | 0.603    | 0.430      | 0.160593    |        |
+| 調查戶數         | 0.004    | 0.002      | 0.031695    | \*     |
+| 調查容器合計     | 0.026    | 0.003      | 5.46E-15    | \*\*\* |
+| 陽性容器合計     | 7.784    | 0.261      | \< 2e-16    | \*\*\* |
+| 布氏指數         | 0.434    | 0.127      | 0.000647    | \*\*\* |
+| 容器指數         | 0.271    | 0.018      | \< 2e-16    | \*\*\* |
+| 二月             | -0.077   | 0.275      | 0.780424    |        |
+| 三月             | -0.165   | 0.243      | 0.495713    |        |
+| 四月             | 0.183    | 0.249      | 0.461133    |        |
+| 五月             | 0.148    | 0.231      | 0.51989     |        |
+| 六月             | 0.298    | 0.244      | 0.221728    |        |
+| 七月             | 0.503    | 0.239      | 0.035447    | \*     |
+| 八月             | 0.784    | 0.235      | 0.000841    | \*\*\* |
+| 九月             | 0.469    | 0.238      | 0.048807    | \*     |
+| 十月             | 0.448    | 0.242      | 0.063945    | .      |
+| 十一月           | 0.556    | 0.238      | 0.019175    | \*     |
+| 十二月           | 0.202    | 0.243      | 0.405835    |        |
+
+由表一的結果可以得到，零值的發生與否與調查種類(Private)、調
+
+查戶數合計、陽性容器合計、布氏指數、容器指數與夏秋兩季月份
+
+有明顯關係，且都與對數勝算有正相關，調查戶數、調查容器合計
+
+可解釋為，在特定的抽樣計畫下，若選擇抽越多，代表非零值發生
+
+的對數勝算越高。其他變數則相對直觀，當調查種類是"Private"時
+
+，會造成對數勝算上升；當樣本來自於上列的夏秋月份，則也會造
+
+成對數勝算的上升；陽性容器合計、布氏指數、容器指數越大，對
+
+數勝算越高(如表二)。
+
+**表二、加權羅吉斯回歸各顯著變數對勝算比的影響。**
+
++------------------+------------------+-------------------------------+
+|                  | Estimate         | 增加一單位/發生，勝算變為幾倍 |
++------------------+------------------+-------------------------------+
+| 截距             | -7.476           |                               |
++------------------+------------------+-------------------------------+
+| 調查種類-Private | 0.902            | 2.456                         |
++------------------+------------------+-------------------------------+
+| 調查戶數         | 0.004            | 1.004                         |
++------------------+------------------+-------------------------------+
+| 調查容器合計     | 0.026            | 1.026                         |
++------------------+------------------+-------------------------------+
+| 陽性容器合計     | 7.784            | 2401.863                      |
++------------------+------------------+-------------------------------+
+| 布氏指數         | 0.434            | 1.543                         |
++------------------+------------------+-------------------------------+
+| 容器指數         | 0.271            | 1.311                         |
++------------------+------------------+-------------------------------+
+| 七月             | 0.503            | 1.654                         |
++------------------+------------------+-------------------------------+
+| 八月             | 0.784            | 2.190                         |
++------------------+------------------+-------------------------------+
+| 九月             | 0.469            | 1.598                         |
++------------------+------------------+-------------------------------+
+| 十月             | 0.448            | 1.565                         |
++------------------+------------------+-------------------------------+
+| 十一月           | 0.556            | 1.744                         |
++------------------+------------------+-------------------------------+
+
+```{r}
+wact_tra <- ifelse(act_tra==0,(length(act_tra)/sum(act_tra==0)),(length(act_tra)/sum(act_tra==1)))
+data_log <- subset(train,select=c(survey_type,surveyed_hh,total_cont,ptotal_cont,bidx,contidx,mon))
+
+data_log$survey_type <- as.factor(data_log$survey_type)
+data_log$mon <- as.factor(data_log$mon)
+
+logm <- suppressWarnings(glm(act_tra~ .,data=data_log,family=binomial,weights =wact_tra))
+#summary(logm)
+resul <- ifelse(predict(logm,test,type="response")>=0.5,1,0)
+st <- data.frame(table(resul,act_tes))
+std <- data.frame(c("","","預測值",""),c("","","0","1"),c("實際值","0",st[1,3],st[2,3]),c("","1",st[3,3],st[4,3]))
+
+kable(std,caption='混淆矩陣',col.names = c("","","",""))
+```
+
+## 羅吉斯回歸—環境病媒蚊與家戶感染登隔熱模型
+
+陽性戶數與病媒蚊相關數據是同時被測量到的，但我們認為調查地
+
+周圍是否有病媒蚊(陽性容器、容器級數、布氏級數等)並不一定可
+
+以推論該地即有人確診，因此我們選擇使用前面提及的樣本陽性比
+
+率做為反應變數進行預測，但以比率做為反應變數會遇到區間的天
+
+然限制。
+
+因此我們參考Agristi (2019)
+
+3.2.4，將原本書中的4個等級擴充到樣本數個等級，然後把資料作
+
+為列連表形式(如表三)，並以各樣本的"調查戶數"作為權重(weight
+
+s)，進行羅吉斯回歸，並將預測出的機率作為輸出值。我們選定的
+
+解釋變數包含：調查種類、調查戶數、調查容器合計、陽性容器合
+
+計、調查容器戶外、陽性容器戶外、布氏指數、容器指數與月份。
+
+其中，調查種類以"Else"作為基準，月份以一月作為基準。
+
+
+我們會先使用零值處理部分的模型進行分類，將預測為"非零"的部
+
+份作為此羅吉斯回歸的預測範圍，最後繪製殘差圖。
+
+解釋變數: (survey_type,surveyed_hh,total_cont,ptotal_cont,b
+
+idx,contidx,mon,out_cont,pout_cont)
+
+**表三、按Agristi (2019)整理資料格式。**
+
++-----------------------+----------------+-------------------+
+| 解釋變數              | 陽性戶數       | 調查戶數-陽性戶數 |
+|                       |                |                   |
+|                       |                | (陰性戶數)        |
++=======================+================+===================+
+| ("Private",53,51,...) | 6              | 47                |
++-----------------------+----------------+-------------------+
+| ("Private",50,74,...) | 3              | 47                |
++-----------------------+----------------+-------------------+
+| ("Private",50,40,...) | 6              | 44                |
++-----------------------+----------------+-------------------+
+| ("Private",50,13,...) | 1              | 49                |
++-----------------------+----------------+-------------------+
+| ("Private",50,25,...) | 1              | 49                |
++-----------------------+----------------+-------------------+
+| ("Private",50,33,...) | 4              | 44                |
++-----------------------+----------------+-------------------+
+| ...                   | ...            | ...               |
++-----------------------+----------------+-------------------+
+
+```{r}
+
+train_b <- train[train$pos_hh!=0,]
+train_b <- train_b[(train_b$pos_hh/train_b$surveyed_hh)<=1,]
+
+br <- train_b$pos_hh/train_b$surveyed_hh
+model2 <- glm(br~.,weights = (train_b$surveyed_hh),family=binomial, data=subset(train_b,select=c(survey_type,surveyed_hh,total_cont,ptotal_cont,bidx,contidx,mon,out_cont,pout_cont)))
+pre1 <- test[resul==1,]
+hist(pre1$pos_hh,main="Histogram of positive household for\n samples predicted 1",xlab="positive household")
+
+#summary(model2)
+#marginal_effects(model2)
+#margins(model2)
+```
+
+**表四、羅吉斯回歸模型估計結果。**
+
+|                  |          |            |             |        |
+|------------------|----------|------------|-------------|--------|
+|                  | Estimate | Std. Error | Pr(\>\|z\|) |        |
+| (Intercept)      | -3.415   | 0.051      | \< 2e-16    | \*\*\* |
+| 調查種類-Private | 0.039    | 0.036      | 0.26867     |        |
+| 調查種類-Public  | -0.062   | 0.057      | 0.27808     |        |
+| 調查戶數         | -0.012   | 0.000      | \< 2e-16    | \*\*\* |
+| 調查容器合計     | 0.008    | 0.001      | 4.40E-12    | \*\*\* |
+| 陽性容器合計     | -0.013   | 0.008      | 0.10417     |        |
+| 布氏指數         | 0.039    | 0.003      | \< 2e-16    | \*\*\* |
+| 容器指數         | 0.008    | 0.000      | \< 2e-16    | \*\*\* |
+| 二月             | -0.079   | 0.047      | 0.09034     | .      |
+| 三月             | -0.009   | 0.039      | 0.80902     |        |
+| 四月             | 0.038    | 0.040      | 0.33686     |        |
+| 五月             | 0.098    | 0.034      | 0.00396     | \*\*   |
+| 六月             | 0.156    | 0.033      | 1.85E-06    | \*\*\* |
+| 七月             | 0.187    | 0.032      | 5.82E-09    | \*\*\* |
+| 八月             | 0.195    | 0.032      | 1.09E-09    | \*\*\* |
+| 九月             | 0.204    | 0.032      | 2.86E-10    | \*\*\* |
+| 十月             | 0.064    | 0.035      | 0.06925     | .      |
+| 十一月           | 0.033    | 0.036      | 0.36663     |        |
+| 十二月           | 0.034    | 0.038      | 0.35986     |        |
+| 調查容器戶外     | 0.001    | 0.001      | 0.2886      |        |
+| 陽性容器戶外     | 0.047    | 0.007      | 6.62E-12    | \*\*\* |
+
+由表四可以看出，對於直接預測各樣本的比例參數，調查戶數、調
+查容器合計、布氏指數、容器指數、夏季月份、陽性容器戶外有顯
+著的相關。從結果可以得知，比例較高的因素有：被計畫並調查的
+戶數多、登革熱的陽性指標與數值、夏季月份。表五提供羅吉斯回
+歸各顯著變數對勝算比的影響。
+
+**表五、羅吉斯回歸各顯著變數對勝算比的影響。**
+
++------------------+------------------+---------------------------------+
+|                  | Estimate         | 增加一單位/發生，勝算比變為幾倍 |
++------------------+------------------+---------------------------------+
+| (Intercept)      | -3.415           | 0.032876                        |
++------------------+------------------+---------------------------------+
+| 調查戶數         | -0.012           | 0.988072                        |
++------------------+------------------+---------------------------------+
+| 調查容器合計     | 0.008            | 1.008032                        |
++------------------+------------------+---------------------------------+
+| 布氏指數         | 0.039            | 1.03977                         |
++------------------+------------------+---------------------------------+
+| 容器指數         | 0.008            | 1.008032                        |
++------------------+------------------+---------------------------------+
+| 五月             | 0.098            | 1.102963                        |
++------------------+------------------+---------------------------------+
+| 六月             | 0.156            | 1.168826                        |
++------------------+------------------+---------------------------------+
+| 七月             | 0.187            | 1.205627                        |
++------------------+------------------+---------------------------------+
+| 八月             | 0.195            | 1.215311                        |
++------------------+------------------+---------------------------------+
+| 九月             | 0.204            | 1.226298                        |
++------------------+------------------+---------------------------------+
+| 陽性容器戶外     | 0.047            | 1.048122                        |
++------------------+------------------+---------------------------------+
+
+檢查模型。先進行合適度檢定，可以看到相對於null模型，此模型
+
+較好。Newsom (2021) 
+
+提到，在大樣本的情況下，羅吉斯回歸的殘差會漸進常態分配，因
+
+此檢查殘差的常態性，由QQ-plot可以看到，殘差並不是常態分配。
+
+繪製殘差圖。
+
+```{r}
+#Goodness of fit.
+#Likelihood-ratio goodness of fit
+dev_log <- with(model2,null.deviance-deviance)
+df_log <- with(model2,df.null-df.residual)
+qchisq(0.05,df_log,lower.tail = T)<dev_log
+pv_log <- 1-pchisq(dev_log,df_log)
+pv_log #0
+#Residaul v.s. fitted value
+layout(matrix(c(1,2),ncol=2))
+plot(model2$fitted.values,rstandard(model2,type="pearson"),main="Standardized Pearson\n Residual Plot",xlab="Fitted Value",ylab="Standardized Residuals")
+abline(h=0)
+plot(model2$fitted.values,rstandard(model2,type="pearson"),xlim=c(0,6),main="Standardized Pearson\n Residual Plot (Partial)",xlab="Fitted Value",ylab="Standardized Residuals")
+abline(h=0)
+
+layout(1)
+
+#Check normality.
+res_log <- residuals(model2)
+fit_log <- fitdistr(model2$residuals,"normal")
+
+#,start=list(mean=mean(model2$residuals),sd=sd(model2$residuals))
+
+z <- qnorm(ppoints(res_log),mean=fit_log$estimate[1],sd=fit_log$estimate[2])
+qqplot(z,res_log,main="Normal QQ plot of residuals")
+qqline(res_log,distribution=function(p) qnorm(p,mean=fit_log$estimate[1],sd=fit_log$estimate[2]))
+
+ks.test(res_log,"pnorm",mean=fit_log$estimate[1],sd=fit_log$estimate[2])
+ad.test(res_log,"pnorm",mean=fit_log$estimate[1],sd=fit_log$estimate[2])
+cvm.test(res_log,"pnorm",mean=fit_log$estimate[1],sd=fit_log$estimate[2])
+
+
+```
+
+進行測試集測試。由圖"Erroe of positive household Plot 
+
+(Partial)"與預測不為零的陽性戶數直方圖可以看出，此預測並無
+
+法很好地預測陽性戶數值，我們認為可能的原因是預測值是經過轉
+
+換的，並非直接預測"陽性戶數"。
+
+```{r}
+resul_logp <- predict(model2,pre1,type="response")
+layout(matrix(c(1,2,3,4),nrow=2))
+plot(resul_logp- (pre1$pos_hh/pre1$surveyed_hh),main="Error of Proportion Plot",ylab="Errors")
+plot(resul_logp- (pre1$pos_hh/pre1$surveyed_hh),main="Error of Proportion Plot (Partial)",ylab="Errors",ylim=c(-.1,.1))
+
+actp_log <- pre1$pos_hh
+prep_log <- resul_logp*pre1$surveyed_hh
+
+plot(actp_log-prep_log,main="Error of positive household Plot",ylab="Errors")
+plot(actp_log-prep_log,main="Error of positive household\n Plot (Partial)",ylim=c(-3,3),ylab="Errors")
+
+layout(1)
+rmse_logp <- sqrt(mean(((resul_logp- (pre1$pos_hh/pre1$surveyed_hh))^2)))
+
+rmse_logp2 <-sqrt(mean((actp_log-prep_log)^2)) 
+
+```
+
+## Beta回歸—環境病媒蚊與家戶感染登隔熱模型
+
+如同前面的作法，我們試著使用Beta回歸，直接對式(1)的樣本陽性
+
+比率做預測。因為Beta分配的值域介於(0,1)之間，因此我們可以將
+
+預測值限制在(0,1)之內。但我們的資料前處理中，事先將0與非0的
+
+數據進行分類，比率為1的值並沒有被處理，然而Beta回歸並不能將
+
+為1的值放入，所以我們先將訓練集資料中比例為1的值改為0.995。
+
+使用的套件:betareg (預設mean model with logit link, 
+
+precision model with identity link.)
+
+Beta回歸簡介。(參考Ferrari and Cribari-Neto, BETA 
+
+REGRESSION FOR MODELLING RATES AND PROPORTIONS。) Beta 
+
+分配的機率密度函數如(6)所示，而相對應的期望值與變異數分別如
+
+(7)式與(8)式所示。定義平均數Mu與離散參數phi如(9)。假設個樣
+
+本獨立，可將期望值透過link function(probit link, log-log 
+
+link)重新參數化，可得到式(11)。最後透過式(12)的對數概似函數
+
+，對beta進行最大概似估計。 
+$$f(y)=\frac{\Gamma (p+q)}{\Gamma(p)\Gamma(q)}y^{p-1}(1-y)^{q-1}\;\;0<y<1,\,p>0,\,q>0\;\;\;\;(6)$$ 
+$$E(y)=\frac{p}{(p+q)}\;\;\;\;(7)$$ 
+$$Var(y)=\frac{pq}{(p+q)^{2}(p+q+1)}\;\;\;\;(8)$$
+$$\mu =\frac{p}{(p+q)},\,\phi =p+q\;\;\;\;(9)$$ 
+$$p=\mu\phi,\,q=(1-\mu)\phi\;\;\;\;(10)$$
+$$g(\mu_t) = \sum_{i=1}^{k} x_{ti} \beta_i = \eta_t,\,\mu_{t}=g^{-1}(\sum_{i=1}^{k} x_{ti} \beta_i)\;\;\;\;(11)$$
+$$\ell(\beta, \phi) = \sum_{t=1}^{n} \ell_t(\mu_t, \phi),\,where\\\ell_t(\mu_t, \phi) = \log 
+\Gamma(\phi) - \log \Gamma(\mu_t \phi) - \log \Gamma((1 - \mu_t) \phi) +\\ (\mu_t \phi - 1) \log y_t + \left\{ (1 - \mu_t) \phi - 1 \right\} \log (1 - y_t)\;\;\;\;(12)$$
+
+```{r}
+train_beta <- train[train$pos_hh!=0,]
+train_beta <- train_beta[(train_beta$pos_hh/train_beta$surveyed_hh)<=1,]
+
+#replace value 1 by 0.995
+br <- (train_beta$pos_hh/train_beta$surveyed_hh)
+br <- ifelse(br==1,0.995,br)
+#0.9
+
+model_beta <- betareg(br~.,data=subset(train_b,select=c(survey_type,surveyed_hh,total_cont,ptotal_cont,bidx,contidx,mon,out_cont,pout_cont)))
+#summary(model_beta)
+#help(betareg)
+```
+
+**表六、Beta回歸的參數估計結果(Logit link)。**
+
++-------------------+------------+------------+------------+------------+
+|                   | Estimate   | Std Error  | P-value    |            |
++-------------------+------------+------------+------------+------------+
+| 截距              | -3.303     | 0.026      | \< 2e-16   | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| 調查種類-Private  | 0.059      | 0.018      | 0.001      | \*\*       |
++-------------------+------------+------------+------------+------------+
+| 調查種類-Public   | 0.026      | 0.029      | 0.376769   |            |
++-------------------+------------+------------+------------+------------+
+| 調查戶數          | -0.012     | 0.0002     | \< 2e-16   | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| 調查容器合計      | 0.0006     | 0.001      | 0.4134     |            |
++-------------------+------------+------------+------------+------------+
+| 陽性容器合計      | -0.066     | 0.004      | \< 2e-16   | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| 布氏指數          | 0.062      | 0.0006     | \< 2e-16   | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| 容器指數          | 0.005      | 0.0002     | \< 2e-16   | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| 二月              | -0.050     | 0.025      | 0.0426     | \*         |
++-------------------+------------+------------+------------+------------+
+| 三月              | -0.006     | 0.021      | 0.7866     |            |
++-------------------+------------+------------+------------+------------+
+| 四月              | 0.038      | 0.021      | 0.0763     | .          |
++-------------------+------------+------------+------------+------------+
+| 五月              | 0.082      | 0.019      | 9.78E-06   | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| 六月              | 0.129      | 0.018      | 7.57E-13   | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| 七月              | 0.170      | 0.018      | \< 2e-16   | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| 八月              | 0.167      | 0.017      | \< 2e-16   | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| 九月              | 0.175      | 0.018      | \< 2e-16   | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| 十月              | 0.068      | 0.019      | 0.0004     | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| 十一月            | 0.039      | 0.020      | 0.0502     | .          |
++-------------------+------------+------------+------------+------------+
+| 十二月            | 0.037      | 0.020      | 0.0688     | .          |
++-------------------+------------+------------+------------+------------+
+| 調查容器戶外      | 0.006      | 0.0007     | 1.18E-13   | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| 陽性容器戶外      | 0.056      | 0.004      | \< 2e-16   | \*\*\*     |
++-------------------+------------+------------+------------+------------+
+| $$                | 154.669    | 1.525      | \< 2e-16   | \*\*\*     |
+|  \phi$$           |            |            |            |            |
++-------------------+------------+------------+------------+------------+
+
+**表七、個變數對平均值的影響**
+
+|                  |          |                                 |
+|------------------|----------|---------------------------------|
+|                  | Estimate | 增加一單位/發生，勝算比是多少倍 |
+| 截距             | -3.303   | 0.037                           |
+| 調查種類-Private | 0.059    | 1.061                           |
+| 調查戶數         | -0.012   | 0.988                           |
+| 陽性容器合計     | -0.066   | 0.936                           |
+| 布氏指數         | 0.062    | 1.064                           |
+| 容器指數         | 0.005    | 1.005                           |
+| 二月             | -0.05    | 0.951                           |
+| 五月             | 0.082    | 1.085                           |
+| 六月             | 0.129    | 1.138                           |
+| 七月             | 0.17     | 1.185                           |
+| 八月             | 0.167    | 1.182                           |
+| 九月             | 0.175    | 1.191                           |
+| 十月             | 0.068    | 1.070                           |
+| 調查容器戶外     | 0.006    | 1.006                           |
+| 陽性容器戶外     | 0.056    | 1.058                           |
+
+從表六可以看到，與羅吉斯回歸不一樣的部分是調查種類-Private
+
+、陽性容器合計、調查容器合計。特別的是二月與g(mu)成反比，代
+
+表當樣本是在二月的時候，會造成對數勝算下降。表七提供增加一
+
+單位/發生，勝算比的改變，因為預設的link function是 logit 
+
+function。
+
+接著進行模型檢查與殘差圖繪製。
+
+```{r}
+#Goodness of fit test
+model_beta_null <- betareg(br~1,data=subset(train_b,select=c(survey_type,surveyed_hh,total_cont,ptotal_cont,bidx,contidx,mon,out_cont,pout_cont)))
+
+df_beta <- length(coef(model_beta))-length(coef(model_beta_null))
+qchisq(0.05,df_beta,lower.tail = T)<(logLik(model_beta)-logLik(model_beta_null))
+pv_beta <- 1- pchisq(logLik(model_beta)-logLik(model_beta_null),df_log)#0
+
+  
+#Residual plot
+layout(matrix(c(1,2),ncol=2))
+plot(model_beta$fitted.values,residuals(model_beta,type="pearson"),main="Pearson Residual Plot",xlab="Fitted Value",ylab="Pearson Residuals")
+
+plot(model_beta$fitted.values,residuals(model_beta,type="pearson"),main="Pearson Residual Plot",xlab="Fitted Value (Partial)",ylab="Pearson Residuals",ylim=c(-10,10))
+abline(h=0)
+layout(1)
+
+
+```
+
+使用測試集中，預測為"不為0"的資料進行預測，並繪製Error的圖
+
+。可以看到預測效果並不差，誤差幾乎都在0的值附近，並藉於0.1
+
+到-0.1之間，但因為原始資料中，"陽性戶數"都集中在比較小的數
+
+字，所以一點點誤差再乘上調查戶數，就會造成預測值離原始值比
+
+較遠的狀況。計算RMSE，得出的值為0.755，相較於羅吉斯回歸較小
+
+。
+
+```{r}
+resul_beta <- predict(model_beta,pre1)
+layout(matrix(c(1,2,3,4),nrow=2))
+plot(resul_beta- (pre1$pos_hh/pre1$surveyed_hh),main="Error of Proportion Plot",ylab="Errors")
+plot(resul_beta- (pre1$pos_hh/pre1$surveyed_hh),main="Error of Proportion Plot (Partial)",ylab="Errors",ylim=c(-.07,.07))
+actp_beta <- pre1$pos_hh
+prep_beta <- resul_beta*pre1$surveyed_hh
+plot(actp_beta-prep_beta,main="Error of positive household Plot",ylab="Errors")
+plot(actp_beta-prep_beta,main="Error of positive household Plot (Partial)",ylim=c(-3,3),ylab="Errors")
+layout(1)
+rmse_beta <- sqrt(mean(((resul_beta- (pre1$pos_hh/pre1$surveyed_hh))^2)))
+rmse_beta2 <-sqrt(mean((actp_beta-prep_beta)^2)) 
+
+```
+
+## 隨機森林—環境病媒蚊與家戶感染登隔熱模型
+
+接著我們試著使用隨機森林回歸來進行預測，一樣是使用測試集中
+
+預測為"不為零"的值。並繪製由Gini 
+
+index進行變數重要性的排序。由結果可以看出，最重要的變數是陽
+
+性容器合計、陽性容器戶外與布氏指數。為了跟其他模型比較，也
+
+計算RMSE，計算的值為0.524。
+
+```{r}
+train_rf <- train[train$pos_hh!=0,]
+train_rf <- train_rf[(train_rf$pos_hh/train_rf$surveyed_hh)<=1,] 
+model_rf <- randomForest(train_rf$pos_hh~. ,data=subset(train_rf,select=c(survey_type,surveyed_hh,total_cont,ptotal_cont,bidx,contidx,mon,out_cont,pout_cont)),ntree=500)
+varImpPlot(model_rf,main="Random Forest")
+
+pre1 <- test[resul==1,]
+resul_rf <- predict(model_rf,pre1)
+plot(resul_rf-pre1$pos_hh,main="Error plot of random forest",ylab="Errors")
+
+rmse_rf <-  sqrt(mean((resul_rf-pre1$pos_hh)^2))
+
+```
+
+## 負二項回歸—環境病媒蚊與家戶感染登隔熱模型
+
+接著我們希望可以嘗試直接預測"陽性戶數"，選擇負二項回歸處理
+
+計數資料，然後避免出現overdispersion的情況。繪製"陽性戶數"
+
+的直條圖，有右偏的情況，因此我們後續也有加上權重進行分析。
+
+權重的選擇是總樣本數，除以該樣本陽性戶數的值在所有樣本的總
+
+數，以平衡右偏的狀況。
+
+```{r}
+train_nb <- train[train$pos_hh!=0,]
+train_nb <- train_nb[(train_nb$pos_hh/train_nb$surveyed_hh)<=1,]
+barplot(table(train_nb$pos_hh),ylim=c(0,15000),main="Barplot of number categories of positive\n household in training data")
+
+
+dict_nb <- data.frame(key = as.numeric(names(table(train_nb$pos_hh))),value = as.numeric(table(train_nb$pos_hh)))
+table(train_nb$pos_hh)
+
+weight_nb <- c()
+for (i in train_nb$pos_hh){
+  weight_nb <- c(weight_nb,dict_nb$value[dict_nb$key==i])
+  
+}
+weight_nb <- length(train_nb$pos_hh)/weight_nb
+
+model_nb <- glm.nb(train_nb$pos_hh~.,data=subset(train_nb,select=c(survey_type,surveyed_hh,total_cont,ptotal_cont,bidx,contidx,mon,out_cont,pout_cont)))
+#summary(model_nb)
+```
+
+**表八、負二項回歸參數估計結果。**
+
++------------------+------------+------------+-------------+------------+
+|                  | Estimate   | Std. Error | Pr(\>\|z\|) |            |
++------------------+------------+------------+-------------+------------+
+| 截距             | -0.118     | 0.049      | 0.015463    | \*         |
++------------------+------------+------------+-------------+------------+
+| 調查種類-Private | 0.089      | 0.035      | 0.011632    | \*         |
++------------------+------------+------------+-------------+------------+
+| 調查種類-Public  | -0.025     | 0.056      | 0.656405    |            |
++------------------+------------+------------+-------------+------------+
+| 調查戶數         | 0.000      | 0.000      | 0.114962    |            |
++------------------+------------+------------+-------------+------------+
+| 調查容器合計     | 0.004      | 0.001      | 2.57E-05    | \*\*\*     |
++------------------+------------+------------+-------------+------------+
+| 陽性容器合計     | 0.066      | 0.006      | \< 2e-16    | \*\*\*     |
++------------------+------------+------------+-------------+------------+
+| 布氏指數         | -0.001     | 0.001      | 0.046615    | \*         |
++------------------+------------+------------+-------------+------------+
+| 容器指數         | 0.008      | 0.000      | \< 2e-16    | \*\*\*     |
++------------------+------------+------------+-------------+------------+
+| 二月             | -0.070     | 0.047      | 0.133753    |            |
++------------------+------------+------------+-------------+------------+
+| 三月             | -0.004     | 0.039      | 0.912694    |            |
++------------------+------------+------------+-------------+------------+
+| 四月             | 0.047      | 0.040      | 0.235436    |            |
++------------------+------------+------------+-------------+------------+
+| 五月             | 0.114      | 0.034      | 0.000841    | \*\*\*     |
++------------------+------------+------------+-------------+------------+
+| 六月             | 0.175      | 0.033      | 8.19E-08    | \*\*\*     |
++------------------+------------+------------+-------------+------------+
+| 七月             | 0.202      | 0.032      | 2.90E-10    | \*\*\*     |
++------------------+------------+------------+-------------+------------+
+| 八月             | 0.209      | 0.032      | 5.24E-11    | \*\*\*     |
++------------------+------------+------------+-------------+------------+
+| 九月             | 0.218      | 0.032      | 1.42E-11    | \*\*\*     |
++------------------+------------+------------+-------------+------------+
+| 十月             | 0.080      | 0.035      | 0.023008    | \*         |
++------------------+------------+------------+-------------+------------+
+| 十一月           | 0.047      | 0.036      | 0.196739    |            |
++------------------+------------+------------+-------------+------------+
+| 十二月           | 0.046      | 0.038      | 0.224881    |            |
++------------------+------------+------------+-------------+------------+
+| 調查容器戶外     | 0.004      | 0.001      | 0.000725    | \*\*\*     |
++------------------+------------+------------+-------------+------------+
+| 陽性容器戶外     | 0.031      | 0.006      | 1.46E-07    | \*\*\*     |
++------------------+------------+------------+-------------+------------+
+
+**表九、顯著參數對平均值的影響。**
+
++------------------+--------------------------+--------------------------+
+|                  | Estimate                 | 對平均值的影響           |
++------------------+--------------------------+--------------------------+
+| 截距             | -0.118                   | 0.889                    |
++------------------+--------------------------+--------------------------+
+| 調查種類-Private | 0.089                    | 1.093                    |
++------------------+--------------------------+--------------------------+
+| 調查容器合計     | 0.004                    | 1.004                    |
++------------------+--------------------------+--------------------------+
+| 陽性容器合計     | 0.066                    | 1.068                    |
++------------------+--------------------------+--------------------------+
+| 布氏指數         | -0.001                   | 0.999                    |
++------------------+--------------------------+--------------------------+
+| 容器指數         | 0.008                    | 1.008                    |
++------------------+--------------------------+--------------------------+
+| 五月             | 0.114                    | 1.121                    |
++------------------+--------------------------+--------------------------+
+| 六月             | 0.175                    | 1.191                    |
++------------------+--------------------------+--------------------------+
+| 七月             | 0.202                    | 1.224                    |
++------------------+--------------------------+--------------------------+
+| 八月             | 0.209                    | 1.232                    |
++------------------+--------------------------+--------------------------+
+| 九月             | 0.218                    | 1.244                    |
++------------------+--------------------------+--------------------------+
+| 十月             | 0.08                     | 1.083                    |
++------------------+--------------------------+--------------------------+
+| 調查容器戶外     | 0.004                    | 1.004                    |
++------------------+--------------------------+--------------------------+
+| 陽性容器戶外     | 0.031                    | 1.031                    |
++------------------+--------------------------+--------------------------+
+
+由表八可以看出，會影響陽性戶數平均的是調查種類-Private、調
+
+查容器合計、陽性容器合計、布氏指數、容器指數、夏秋月份、調
+
+查容器戶外、陽性容器戶外。表九提供各估計顯著變數對陽性戶數
+
+平均的影響。
+
+模型檢查，進行模型檢查與殘差圖繪製。
+
+```{r}
+#Goodness of fit test
+dev_nb <- model_nb$null.deviance-model_nb$deviance
+df_nb <- model_nb$df.null - model_nb$df.residual
+pv_nb <- 1 - pchisq(dev_nb, df_nb)
+pv_nb #0
+
+#Residual Plot
+layout(matrix(c(1,2),ncol=2))
+plot(model_nb$fitted.values,residuals(model_nb,type="pearson"),main="Pearson Residual Plot",xlab="Fitted Value",ylab="Pearson Residuals")
+abline(h=0)
+plot(model_beta$fitted.values,residuals(model_beta,type="pearson"),main="Pearson Residual Plot",xlab="Fitted Value (Partial)",ylab="Pearson Residuals",ylim=c(-5,5))
+abline(h=0)
+layout(1)
+
+
+```
+
+配適加權負二項回歸。
+
+```{r}
+model_nbw <- glm.nb(train_nb$pos_hh~.,data=subset(train_nb,select=c(survey_type,surveyed_hh,total_cont,ptotal_cont,bidx,contidx,mon,out_cont,pout_cont)),weights = weight_nb)
+pre1 <- test[resul==1,]
+resul_nbw <- predict(model_nbw,pre1)
+#summary(model_nbw)
+```
+
+**表十、加權負二項回歸參數估計結果。**
+
++------------------+-----------+------------+-------------+------------+
+|                  | Estimate  | Std. Error | Pr(\>\|z\|) |            |
++------------------+-----------+------------+-------------+------------+
+| 截距             | 0.7760    | 0.0112     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 調查種類-Private | 0.0336    | 0.0043     | 5.13E-15    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 調查種類-Public  | 0.7143    | 0.0048     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 調查戶數         | 0.0031    | 0.0000     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 調查容器合計     | -0.0054   | 0.0001     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 陽性容器合計     | 0.0526    | 0.0006     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 布氏指數         | 0.0047    | 0.0001     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 容器指數         | -0.0053   | 0.0000     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 二月             | -0.4279   | 0.0205     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 三月             | 0.3110    | 0.0119     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 四月             | 0.1999    | 0.0127     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 五月             | 0.4707    | 0.0108     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 六月             | 0.6706    | 0.0103     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 七月             | 0.5496    | 0.0103     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 八月             | 0.7026    | 0.0103     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 九月             | 0.8041    | 0.0103     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 十月             | 0.5685    | 0.0106     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 十一月           | 1.8190    | 0.0103     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 十二月           | 0.3149    | 0.0117     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 調查容器戶外     | 0.0070    | 0.0001     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+| 陽性容器戶外     | -0.0173   | 0.0006     | \< 2e-16    | \*\*\*     |
++------------------+-----------+------------+-------------+------------+
+
+用測試集中預測為"不為零0"的值進行預測的結果。由結果可以看出
+
+，加權負二項回歸在預測上比較好，而且未加權的似乎需要整體平
+
+移。未加權的負二項回歸RMSE為1.122，加權的負二項回歸RMSE為0.
+
+878。
+
+```{r}
+pre1 <- test[resul==1,]
+resul_nb <- predict(model_nb,pre1)
+
+rmse_nb <-  sqrt(mean((resul_nb-pre1$pos_hh)^2))
+
+layout(matrix(c(1,2),ncol=2))
+plot(resul_nb-pre1$pos_hh,main="Error plot of \nnegative binomial regression",ylab="Errors")
+abline(h=0)
+plot(resul_nbw-pre1$pos_hh,main="Error plot of \nweighted negative binomial regression",ylab="Errors")
+abline(h=0)
+layout(1)
+
+rmse_nbw <-  sqrt(mean((resul_nbw-pre1$pos_hh)^2))
+
+```
+
+## 模型比較—環境病媒蚊與家戶感染登隔熱模型
+
+```{r}
+df_rmses <- data.frame(Model=c("羅吉斯回歸","Beta回歸","隨機森林","負二項回歸","加權負二項回歸"),RMSE=c(rmse_logp2,rmse_beta2,rmse_rf,rmse_nb,rmse_nbw))
+df_rmses$RMSE <- round(df_rmses$RMSE,digits = 3)
+kable(df_rmses,caption = "各模型RMSE比較")
+```
+
+## **時間序列分析**
+
+### "陽性戶數"時間序列分析(以台南市東區為例)
+
+先進行資料整理與時間序列圖繪製。因為整體資料過於龐大，且有
+
+人口較密集的區域與較不密集的區域，所以我們先取出東區(市區人
+
+口密集區)105年的資料並進行陽性戶數的時間序列圖繪製。可以由
+
+圖大略看出，進行監測的時間之間是有間隔的，並在一小段時間內
+
+進行多次測量；進一步用table()函數看日期，並檢視原始資料，可
+
+以發現有一些日期會同時進行多地的監測。但同一時間有多項觀測
+
+值無法進行分析，因此我們選擇留下同一天中，陽性戶數最大的那
+
+筆資料，以確保在後續估計中，不會低估陽性戶數。在時間序列中
+
+，我們僅需要預測發展的趨勢，所以並不需要所有的資料進行分析
+
+，但必須注意到地區的問題，因為同一天的資料是不同地區的檢測
+
+，所以如果透過選取最大作為方法，要注意地區選擇如果過大會導
+
+致解釋上的困難。
+
+```{r}
+cbind(mapt$TOWNNAME,mapt$TOWNENG)
+datat <- data05[data05$TOWNCODE==67000320,]
+plot(datat$Date,datat$pos_hh)
+t <- function(A=data,B='pos_hh',C="Time Series Chart of Positive Households\n in East District, 2016"){
+  datat1 <- A %>%
+  group_by(Date) %>%
+  arrange(desc(!!sym(B))) %>%
+  slice_head(n = 1)
+  plot(datat1$Date,datat1[[B]], main = C, xlab = "Date", ylab = "Positive Household",type="o")
+}
+t(A=datat)
+```
+
+此圖是東區105年至113年的陽性戶數時間序列圖，紅線代表每年的1
+
+月1日，由圖中可以看到，每年的夏季或秋季都會有高峰期。
+
+```{r}
+t(data,C="From the year 2016 to the year\n 2024, August (with same-day data removed)")
+abline(v=as.Date("2016-01-01"),col="red")
+abline(v=as.Date("2017-01-01"),col="red")
+abline(v=as.Date("2018-01-01"),col="red")
+abline(v=as.Date("2019-01-01"),col="red")
+abline(v=as.Date("2020-01-01"),col="red")
+abline(v=as.Date("2021-01-01"),col="red")
+abline(v=as.Date("2022-01-01"),col="red")
+abline(v=as.Date("2023-01-01"),col="red")
+abline(v=as.Date("2024-01-01"),col="red")
+#plot(window(datat2$陽性戶數,start=c(2016,1)),ylab='CO2',type="o")
+#Month=c('J','F','M','A','M','J','J','A','S','O','N','D')
+#MC <- c("blue","blue","green","green","red","red","red","red","red","red","orange","orange")
+#points(window(datat2$陽性戶數,start=c(2016,1)),pch=Month,col=MC,cex=.2)
+```
+
+由上圖可以看到，有一些樣本會異常地高，我們認為這與每一個樣
+
+本的調查戶數有關係，因為調查戶數越少，相對陽性戶數一定也會
+
+更少。因此我們決定使用(1)式進行計算。
+
+
+```{r}
+datat2 <- data %>%
+  group_by(Date) %>%
+  arrange(desc(pos_hh)) %>%
+  slice_head(n = 1)
+datat2 <- datat2[(datat2$pos_hh/datat2$surveyed_hh)<=1,]
+plot((datat2$pos_hh/datat2$surveyed_hh)*100~datat2$Date,type="l",ylim=c(0,100),ylab="Proportion of positive households in the sample (100%)",xlab="Date",main="Time series plot of proportion of\n positive households in the sample ")
+
+```
+
+由局部放大圖可以看出，在時間序列上有直接連接的區段。
+
+```{r}
+plot((datat2$pos_hh/datat2$surveyed_hh)*100~datat2$Date,type="o",ylim=c(0,100),ylab="Proportion of positive households in the sample (100%)",xlab="Date",main="Time series plot of proportion of\n positive households in the sample (Partial)",xlim=c(as.Date("2016-04-01"),as.Date("2016-10-31")))
+```
+
+在進行時間序分析時，因為時間序列的假設中並沒有邊界的限制，
+
+因此會出現預測值大於1或小於0的狀況，因此我們選擇使用Logit 
+
+Transformation ((13)式)進行轉換，使資料的範圍變為實數，(14)
+
+式。先使用前面提到，陽性戶數不為零的訓練集資料，進行時間序
+
+列模型建模，再去預測由加權羅吉斯"預測"陽性戶數不為零的測試
+
+集資料。其中，為了避免樣本比例為1的值會變換成無窮大，因此我
+
+們將比例為1的值替換成1-(1E-6)。
+
+$$
+logit(p)=ln(\frac {p}{1-p})\;\;\;\;(13)
+$$
+
+$$
+[0,1]\;\mapsto \;(-\infty ,\infty )\;\;\;\;(14)
+$$
+
+```{r}
+train_ts <- train[train$pos_hh!=0,]
+train_ts <- train_ts[(train_ts$pos_hh/train_ts$surveyed_hh)<=1,]
+train_ts <- train_ts %>%
+  group_by(Date) %>%
+  arrange(desc(pos_hh)) %>%
+  slice_head(n = 1)
+df_ts <- data.frame(as.Date(train_ts$Date),(train_ts$pos_hh/train_ts$surveyed_hh))
+colnames(df_ts) <- c("Date","lprop")
+epsilon <- 1e-6
+df_ts$lprop <- ifelse(df_ts$lprop==1,1-epsilon,df_ts$lprop)
+df_ts$lprop <- qlogis(df_ts$lprop)
+plot(df_ts$Date,df_ts$lprop,type="l",main="Time series plot of logit proportion",xlab="Date",ylab="logit proportion",ylim=c(-8,15))
+```
+
+接著，我們將不連續的時間段視為缺失值，頻率為一天一筆，雖然A
+
+RMA與GARCH模型可以考慮不等的時間間隔，但是無法直接處理缺失
+
+值，而這樣的性質會造成設定滯後項時無法解釋，因為在較大的間
+
+隔發生時，下一筆資料依然是上一筆資料為前一筆，在後續預測時
+
+，無法正確反應時間的經過。我們嘗試了兩種填補缺失值的方法，
+
+第一種是線性插值法，參考Kong et al. 
+
+(2021)。另一種做法是使用卡爾曼濾波器，參考Huang 
+
+(2024)。由局部放大圖可以看出，卡爾曼濾波的效果較線性插值法
+
+好，線性插值法會將突然出現的波動中間直接填補。所以我們後續
+
+的分析將使用經過卡爾曼濾波處理過的資料。
+
+
+```{r}
+full <- data.frame(seq(from = min(df_ts$Date), to = max(df_ts$Date), by = "day"))
+colnames(full) <- "Date"
+df_ts_kalman <- merge(df_ts,full,by="Date",all = T) 
+kable(head(df_ts_kalman,n=6))
+df_ts_kalman <- na_kalman(df_ts_kalman)
+
+df_ts_inter <- merge(df_ts,full,by="Date",all = T) 
+df_ts_inter <- na_interpolation(df_ts_inter)
+
+plot(df_ts_kalman$Date,df_ts_kalman$lprop,type="l",main="Time series plot of logit\n proportion after kalman filtering",xlab="Date",ylab="logit proportion",ylim=c(-8,15))
+
+plot(df_ts_inter$Date,df_ts_inter$lprop,type="l",main="Time series plot of logit\n proportion after interpolation",xlab="Date",ylab="logit proportion",ylim=c(-8,15))
+
+
+layout(matrix(c(1,2,3,4),nrow=2))
+plot(as.Date(df_ts$Date),df_ts$lprop,main="Time series plot of logit\n proportion (Partial)",xlab="Date",ylab="logit proportion",ylim=c(-8,15),xlim=c(as.Date("2016-06-01"),as.Date("2016-07-31")),type="o")
+plot(as.Date(df_ts_kalman$Date),df_ts_kalman$lprop,main="Time series plot of logit proportion\n after kalman filter (Partial)",xlab="Date",ylab="logit proportion",ylim=c(-8,15),xlim=c(as.Date("2016-06-01"),as.Date("2016-07-31")),type="o")
+plot(as.Date(df_ts_inter$Date),df_ts_inter$lprop,type="o",main="Time series plot of logit\n proportion after interpolation",xlab="Date",ylab="logit proportion",ylim=c(-8,15),xlim=c(as.Date("2016-06-01"),as.Date("2016-07-31")))
+layout(1)
+```
+
+```{r}
+#adf.test(df_ts_kalman$lprop)
+#auto.arima(df_ts_kalman$lprop)#(1,1,1)
+#acf(df_ts_kalman)
+#pacf(df_ts_kalman)
+model_arima <- arima(df_ts_kalman$lprop,order=c(1,1,1))
+res <- residuals(model_arima)
+#plot(res,type="l")
+#acf(res[2:length(res)],main="ACF plot of residual of ARMA(1,1)")
+#McLeod.Li.test(y=res)
+
+##
+test_ts <-  test[resul==1,]
+test_ts <- test_ts[(test_ts$pos_hh/test_ts$surveyed_hh)<=1,]
+test_ts <- test_ts %>%
+  group_by(Date) %>%
+  arrange(desc(pos_hh)) %>%
+  slice_head(n = 1)
+test_arima <- data.frame(test_ts$Date,(test_ts$pos_hh)/(test_ts$surveyed_hh))
+colnames(test_arima) <- c("Date","lprop")
+test_arima$lprop <- ifelse(test_arima$lprop==1,1-(1e-6),test_arima$lprop)
+test_arima$lprop <- qlogis(test_arima$lprop)
+full <- data.frame(seq(from = as.Date("2023-01-01"), to = max(test_arima$Date), by = "day"))
+colnames(full) <- "Date"
+test_arima_kalman <- merge(test_arima,full,by="Date",all = T) 
+test_arima_kalman$lprop <- ifelse(is.finite(test_arima_kalman$lprop),test_arima_kalman$lprop,NA)
+test_arima_kalman_d <- na_kalman(test_arima_kalman$lprop)
+
+####
+
+resul_arima <- predict(model_arima,n.ahead=365)
+tsplotorig <- ts(df_ts_kalman$lprop,start=c(2016,3),frequency=365)
+tsplotpred <- ts(resul_arima$pred,start=c(2023,1),frequency = 365)
+#ts.plot(tsplotorig,tsplotpred)
+
+#plot(resul_arima,ylim=c(-5,1))
+#points((2553:(2552+length(test_arima_kalman_d))),test_arima_kalman_d,col="red",type="o")
+```
+
+### ARMA+GARCH模型
+
+先進行ADF test，可以看到不進行差分的資料就已經是平穩的了，
+
+所以我們就直接使用原始經過卡爾曼濾波處理過後的logit 
+
+樣本比例。進行McLeod Li test 
+
+確定資料是否有GARCH效應，結果顯示資料具有GARCH效應。使用aut
+
+o.arima()函數，建議使用ARMA(1,1)模型，在GARCH的部分，我們直
+
+接選擇使用GARCH(1,1)模型。我們將訓練集的模型放入估計，並直
+
+接預測364天的後續預測，可以看出預測效果並不好，其預測出的是
+
+一個平滑的曲線，只能預測出一個大趨勢。表十一提供ARMA(1,1)+G
+
+ARCH(1,1)參數估計。
+
+```{r}
+adf.test(df_ts_kalman$lprop)
+
+McLeod.Li.test(y=df_ts_kalman$lprop,main="McLeod-Li test")
+spec_argar <- ugarchspec(variance.model = list(model="sGARCH",garchOrder=c(1,1)),,mean.model = list(armaOrder=c(1,1),include.mean=TRUE)
+)
+
+
+#########
+data_argar <- rbind(train_ts,test_ts)
+data_argar <- 
+argar <- data.frame(data_argar$Date,(data_argar$pos_hh)/(data_argar$surveyed_hh))
+colnames(argar) <- c("Date","lprop")
+argar$lprop <- ifelse(argar$lprop==1,1-(1e-6),argar$lprop)
+argar$lprop <- qlogis(argar$lprop)
+full <- data.frame(seq(from = min(argar$Date), to = max(argar$Date), by = "day"))
+colnames(full) <- "Date"
+argar <- merge(argar,full,by="Date",all = T)
+argar$lprop <- ifelse(!is.finite(argar$lprop),NA,argar$lprop)
+argar_k <- na_kalman(argar$lprop)
+argar_k <- ts(argar_k,start = c(2016,4),frequency = 365)
+###########
+
+
+model_argar_r <- ugarchfit(spec_argar,data = argar_k,out.sample = 364)
+resul_argar_r <- ugarchforecast(model_argar_r,n.ahead =10,n.roll = 363)
+resul_argar_r_365 <- ugarchforecast(model_argar_r,n.ahead =364)
+plot(resul_argar_r_365,which=1)
+#model_argar_r
+
+```
+
+**表十一、ARMA(1,1)+GARCH(1,1)參數估計。**
+
++--------+--------------------+--------------------+--------------------+
+|        | Estimate           | Std. Error         | Pr(\>\|t\|)        |
++--------+--------------------+--------------------+--------------------+
+| mu     | -4.141             | 0.228              | 0.00E+00           |
++--------+--------------------+--------------------+--------------------+
+| ar1    | 0.997              | 0.001              | 0.00E+00           |
++--------+--------------------+--------------------+--------------------+
+| ma1    | -0.884             | 0.011              | 0.00E+00           |
++--------+--------------------+--------------------+--------------------+
+| omega  | 0.103              | 0.017              | 0.00E+00           |
++--------+--------------------+--------------------+--------------------+
+| alpha1 | 0.385              | 0.046              | 0.00E+00           |
++--------+--------------------+--------------------+--------------------+
+| beta1  | 0.353              | 0.080              | 1.10E-05           |
++--------+--------------------+--------------------+--------------------+
+
+因為直接預測的效果並不好，所以我們試著使用滾動式預測，方法
+
+是每一天的預測值是10天之前的363天的資料進行預測，並繪製結果
+
+，可以看出此模型可以在10天的間隔下，準確預測平均的趨勢，但
+
+是對於較大的波動，處理上並不好。
+
+最後我們將預測出來的值，按照經過的函數轉換，然後用實際測試
+
+集進行誤差的結果繪製，並計算RMSE，得到2.036，相較前面的方法
+
+在預測上較不好。
+
+
+```{r}
+plot(resul_argar_r,which=2)
+
+fit_10 <- fitted(resul_argar_r)["T+10",]
+plot(c(1:length(test_arima_kalman_d)),test_arima_kalman_d,type="o",xlab="Numbner of days since 2016-01-01",ylab="logit proportions",main="10 days ahead Predicted Time Series")
+points(c(1:length(fit_10)),fit_10,type="o",col="red")
+plot(fit_10-test_arima_kalman_d,main="Error of logit proportion",ylab="Errorss",xlab="Numbner of days since 2016-01-01")
+
+full_test <- data.frame(seq(from = as.Date("2023-01-01"), to = as.Date("2023-12-31"), by = "day"))
+colnames(full_test) <- "Date"
+acttes_ts <- merge(test_ts,full_test,by = "Date",all=T)
+resul_argar_orig <- as.numeric(plogis(fit_10))*acttes_ts$surveyed_hh
+
+original_ts_withNA <- merge(test_ts,full_test,by="Date",all=T)
+plot(resul_argar_orig-original_ts_withNA$pos_hh,main="Error of Time Series Prediction",ylab="Errors",xlab="Numbner of days since 2016-01-01",type="o")
+
+
+rmse_argar <- sqrt(mean((na.omit(resul_argar_orig)-test_ts$pos_hh)^2))
+kable(caption="RMSE of ARMA(1,1)+GARCH(1,1) model",rmse_argar,col.names = "")
+
+```
+
+參考
+
+衛生福利部疾病管制署網站 <https://www.cdc.gov.tw/Category/ListContent/0BhRQWTf3QSkAys2TE_qQg?uaid=BGrMYW2LrvhzFjT5xxgrPw>
+
+Agristi, 2019, ANINTRODUCTION TO CATEGORICAL DATA ANALYSIS, p.71
+
+Newsom (2021) https://web.pdx.edu/\~newsomj/cdaclass/ho_diagnostics.pdf
+
+Kong et al. (2021) <https://www.sciencedirect.com/topics/computer-science/linear-interpolation>
+
+Huang <https://chih-sheng-huang821.medium.com/%E7%B0%A1%E6%98%93%E4%BB%8B%E7%B4%B9%E5%8D%A1%E7%88%BE%E6%9B%BC%E6%BF%BE%E6%B3%A2-kalman-filter-1b041e371fe6>
